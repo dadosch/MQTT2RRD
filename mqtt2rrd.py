@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2014 David Irvine
-#
+# modded by dadosch
 # This file is part of MQTT2RRD
 #
 # MQTT2RRD is free software: you can redistribute it and/or modify
@@ -17,10 +17,11 @@
 # along with MQTT2RRD.  If not, see "http://www.gnu.org/licenses/".
 #
 import sys, os, argparse, atexit, time, logging, ConfigParser, grp, pwd, getpass, json
-from signal import SIGTERM
-import mosquitto, rrdtool
+from signal import SIGTERM-
+import rrdtool
+import paho.mqtt.client as mosquitto
 
-logger=logging.getLogger("MQTT2RRD")
+logger=logging.getLogger("MQTT2rrd+influx")
 
 config = ConfigParser.RawConfigParser()
 
@@ -137,6 +138,9 @@ def on_message(mosq, obj, msg):
     logger.info("Message received on topic " + msg.topic + " with QoS " + str(
         msg.qos) + " and payload %d " % pl)
     components = msg.topic.split("/")
+    
+    # RRD part
+    
     file_name = components.pop()
     info_file_name = "%s.info" % file_name
     file_name = "%s.rrd" % file_name
@@ -193,7 +197,8 @@ def on_message(mosq, obj, msg):
         rrdtool.update(str(file_path), str("N:%f" % pl))
     except rrdtool.error as e:
         logger.error("Could not log value: %s to RRD %s for topic: %s: %s" % (pl, file_path, msg.topic, str(e)))
-
+    
+    # INFLUXDB part
 
 ######
 #
